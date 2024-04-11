@@ -37,6 +37,7 @@ export function FileSystem(props) {
     axios.post("/api/find", {
       path: path.join("/"),
     }).then((resp) => {
+      console.log(resp.data)
       setFiles(resp.data.Sons.map(item => {
         const icon = (() => {
           if(item.Type === 'DEVICES') {
@@ -51,6 +52,7 @@ export function FileSystem(props) {
           id: item.FilePath,
           name: item.Name,
           isDir: item.Type === 'DIRECTORY',
+          contents: item.contents ,
           icon
         } 
       }))
@@ -66,6 +68,11 @@ export function FileSystem(props) {
       case 'open_files':
         if(e.payload.files[0].isDir) {
           setPath(e.payload.files[0].id.split('/'))
+        } else {
+          Notification.info({
+            title: "文件内容",
+            content: e.payload.files[0].contents,
+          })
         }
         break
       default:

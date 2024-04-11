@@ -1,17 +1,46 @@
 import "./App.css";
 import { Layout } from "@douyinfe/semi-ui";
-import { Tabs, TabPane, Button, Notification } from "@douyinfe/semi-ui";
+import { Tabs, TabPane, Button, Notification, Modal, TextArea, Input } from "@douyinfe/semi-ui";
 import { IconFile, IconGlobe, IconHelpCircle } from "@douyinfe/semi-icons";
 import { Processes } from "./pages/Processes";
 import { FileSystem } from "./pages/FileSystem";
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import axios from 'axios';
 
 function App() {
   const { Header, Content } = Layout;
   const [tick, setTick] = useState(false);
+  const [showSubmitTask, setShowSubmitTask] = useState(false);
+  const script = useRef("")
+  const processName = useRef("")
   return (
     <Layout style={{ height: "100%" }}>
+      <Modal title="提交任务" visible={showSubmitTask} onCancel={() => {setShowSubmitTask(false)}}
+        onOk={() => {
+          axios.post('/api/submit', {script: script.current, name: processName.current}).then(resp => { 
+            Notification.success({
+              title: '提交成功',
+              content: resp.data,
+              duration: 1,
+            })
+            setShowSubmitTask(false)
+            script.current = ""
+            processName.current = ""
+            setTick(~tick)
+          }).catch(e => {
+            Notification.error({
+              title: '执行失败',
+              content: e,
+              duration: 1,
+            })
+          })
+        }}
+      >
+        <Input onChange={(v) => processName.current = v} style={{marginBottom: '10px'}} placeholder={"process name"} />
+        <TextArea autosize={{ minRows: 10, maxRows: 20}} onChange={(v) => script.current = v} />
+      </Modal>
+          
+      
       <Header className="header">
         <div className="capital">
           Software-Defined Operating System
@@ -22,13 +51,16 @@ function App() {
             Notification.info({
               title: '执行结果',
               content: resp.data,
-              duration: 10,
+              duration: 5,
             })
             setTick(!tick);
           })
           setTick(!tick);
         }}> 
           Next Tick
+        </Button>
+        <Button className="submit-task-button" type="primary" theme="solid" onClick={() => setShowSubmitTask(true)}>
+          Submit Task
         </Button>
       </Header>
       <Layout className="maincontent">
@@ -55,48 +87,6 @@ function App() {
               itemKey="2"
             >
               <FileSystem />
-            </TabPane>
-            <TabPane
-              tab={
-                <span>
-                  <IconHelpCircle />
-                  帮助
-                </span>
-              }
-              itemKey="3"
-            >
-              <div style={{ padding: "0 24px" }}>
-                <h3>帮助</h3>
-                <p
-                  style={{
-                    lineHeight: 1.8,
-                    color: "var(--semi-color-text-0)",
-                    fontWeight: 600,
-                  }}
-                >
-                  Q：有新组件需求、或者现有组件feature不能满足业务需求？
-                </p>
-                <p
-                  style={{ lineHeight: 1.8, color: "var(--semi-color-text-1)" }}
-                >
-                  右上角问题反馈，提交issue，label选择Feature Request / New
-                  Component Request 我们会高优处理这些需求。
-                </p>
-                <p
-                  style={{
-                    lineHeight: 1.8,
-                    color: "var(--semi-color-text-0)",
-                    fontWeight: 600,
-                  }}
-                >
-                  Q：对组件的使用有疑惑？
-                </p>
-                <p
-                  style={{ lineHeight: 1.8, color: "var(--semi-color-text-1)" }}
-                >
-                  欢迎进我们的客服lark群进行咨询提问。
-                </p>
-              </div>
             </TabPane>
           </Tabs>
         </Content>

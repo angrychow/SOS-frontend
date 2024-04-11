@@ -18,6 +18,11 @@
   flex-grow: 0;
 }
 
+.submit-task-button {
+  margin-left: 10px;
+  flex-grow: 0;
+}
+
 .sider {
   width: 200px;
   background: var(--semi-color-fill-2)
