@@ -10,7 +10,7 @@ import {
   defineFileAction
 } from "chonky";
 import { useEffect, useState, useMemo } from "react";
-import { Modal, Form, Button, Notification } from "@douyinfe/semi-ui"
+import { Modal, Form, Button, Notification, Toast } from "@douyinfe/semi-ui"
 
 export function FileSystem(props) {
   const createFile = defineFileAction({
@@ -22,16 +22,18 @@ export function FileSystem(props) {
       icon: ChonkyIconName.folderCreate,
     },
   })
-  const fileActions = [createFile, ChonkyActions.OpenFiles, ChonkyActions.OpenFileContextMenu]
+  const deleteFile = defineFileAction({
+    id: 'delete_file',
+    button: {
+      name: 'Delete File',
+      toolbar: true,
+      contextMenu: true,
+      icon: ChonkyIconName.fallbackIcon,
+    },
+  })
+  const fileActions = [createFile, deleteFile, ChonkyActions.OpenFiles, ChonkyActions.OpenFileContextMenu]
   const [path, setPath] = useState(['root'])
   const [createVisible, setCreateVisible] = useState(false);
-  useEffect(() => {
-    axios.post("/api/find", {
-      path: "root",
-    }).then((resp) => {
-      console.log(resp.data)
-    })
-  }, []);
   const [files, setFiles] = useState([])
   useEffect(() => {
     axios.post("/api/find", {
@@ -51,13 +53,14 @@ export function FileSystem(props) {
         return {
           id: item.FilePath,
           name: item.Name,
+          ext: '',
           isDir: item.Type === 'DIRECTORY',
           contents: item.contents ,
           icon
         } 
       }))
     })
-  },[path])
+  },[path, props.tick])
   const handler = (e) => {
     // if(data.)
     console.log(e)
@@ -69,12 +72,18 @@ export function FileSystem(props) {
         if(e.payload.files[0].isDir) {
           setPath(e.payload.files[0].id.split('/'))
         } else {
-          Notification.info({
-            title: "文件内容",
-            content: e.payload.files[0].contents,
-          })
+          props.show(e.payload.files[0].contents)
         }
         break
+      case 'delete_file':
+        // console.log(e.state.selectedFiles[0].id)
+        axios.post('/api/delete', { path: e.state.selectedFiles[0].id }).then(() =>{
+          setPath([...path])
+          Toast.info(`删除 ${e.state.selectedFiles[0].id} 成功`)
+        }).catch(err => {
+          Toast.error(`删除 ${e.state.selectedFiles[0].id} 失败`)
+        })
+        break;
       default:
         break;
     }
@@ -83,7 +92,7 @@ export function FileSystem(props) {
     let ret = []
     let str = ""
     for(var item of path) {
-      if(str != "") {
+      if(str !== "") {
         str += "/"
       }
       str += item
@@ -96,7 +105,7 @@ export function FileSystem(props) {
     return ret
   }, [path])
   return (
-    <div style={{ height: '100%' }}>
+    <div style={{ height: '90vh',marginTop: '10px' }}>
       <FileBrowser files={files} folderChain={folderChain} onFileAction={handler} fileActions={fileActions}>
         <FileNavbar />
         <FileToolbar />
@@ -127,7 +136,7 @@ export function FileSystem(props) {
           </Form.Select>
           <Form.Input label="设备类型（仅设备文件）" field="deviceName" />
           <Form.Input label="文件路径" field="path" initValue={path.join('/')} />
-          <Form.Input label="文件内容" field="content" />
+          <Form.TextArea label="文件内容" field="content" />
           <Button htmlType="submit">提交</Button>
         </Form>
       </Modal>

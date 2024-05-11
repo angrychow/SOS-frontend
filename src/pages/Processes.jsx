@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Table, Button, Modal } from '@douyinfe/semi-ui'
+import { Table, Button, Modal, Tag } from '@douyinfe/semi-ui'
 import axios from 'axios';
 import { useEffect } from 'react';
 import { IconSearch } from '@douyinfe/semi-icons';
@@ -30,10 +30,54 @@ export function Processes(props) {
         {
             title: '目前状态',
             dataIndex: 'ProcessState',
+            render: (v) => (
+                <Tag
+                    size='default'
+                    color={ (() => {
+                        if(v === "RUNNING") {
+                            return 'light-blue'
+                        } else if(v === "READY") {
+                            return 'amber'
+                        } else {
+                            return 'red'
+                        }
+                    })() }
+                >{ (() => {
+                    if(v === "RUNNING") {
+                        return '运行中'
+                    } else if(v === "READY") {
+                        return '准备运行'
+                    } else {
+                        return '阻塞'
+                    }
+                })() }</Tag>
+            )
         },
         {
             title: '优先级',
             dataIndex: 'Priority',
+            render: (v) => (
+                <Tag
+                    size='default'
+                    color={ (() => {
+                        if(v === 20) {
+                            return 'light-blue'
+                        } else if(v === 50) {
+                            return 'amber'
+                        } else {
+                            return 'red'
+                        }
+                    })() }
+                >{ (() => {
+                    if(v === 20) {
+                        return '高优先级'
+                    } else if(v === 50) {
+                        return '中优先级'
+                    } else {
+                        return '低优先级'
+                    }
+                })() }</Tag>
+            )
         },
         {
             title: '寄存器详情',
@@ -42,9 +86,9 @@ export function Processes(props) {
                     console.log(record)
                     setRegisters(record.RegisterCache.map((item, index) => {
                         let regName = "";
-                        if(index == 0) {
+                        if(index === 0) {
                             regName = "CR"
-                        } else if(index == 1) {
+                        } else if(index === 1) {
                             regName = "SP"
                         } else {
                             regName = `R${index - 1}`
