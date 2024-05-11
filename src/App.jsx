@@ -4,25 +4,50 @@ import { Tabs, TabPane, Button, Notification, Modal, TextArea, Input } from "@do
 import { IconBrackets, IconFile, IconGlobe, IconPrint, IconTick } from "@douyinfe/semi-icons";
 import { Processes } from "./pages/Processes";
 import { FileSystem } from "./pages/FileSystem";
-import { useRef, useState } from 'react';
+import { useRef, useState, useEffect, useCallback } from 'react';
 import axios from 'axios';
 import DevicesTable from "./pages/DevicesTable";
 import MMUTable from "./pages/MMUTable";
 import Logs from "./pages/Logs";
 
+function useInterval(callback, delay) {
+  const savedCallback = useRef();
+
+  useEffect(() => {
+    savedCallback.current = callback;
+  }, [callback]);
+
+  useEffect(() => {
+    function tick() {
+      savedCallback.current();
+    }
+
+    if (delay !== null) {
+      const intervalId = setInterval(tick, delay);
+      return () => {
+        clearInterval(intervalId);
+      };
+    }
+  }, [delay]);
+}
+
 function App() {
   const { Header, Content } = Layout;
   const [tick, setTick] = useState(false);
   const [showSubmitTask, setShowSubmitTask] = useState(false);
+  const [showDeviceInput, setShowDeviceInput] = useState(false);
   const [script, setScript] = useState("")
+  const [timer, setTimer] = useState(false);
+  const [logs, setLogs] = useState("")
   const openSumbitWithScript = (script_) => {
     setScript(script_)
     setShowSubmitTask(true)
   }
   const processName = useRef("")
-  const processPriority = useRef("HIGH");
-  const [logs, setLogs] = useState("")
-  const nextTick = () => {
+  const processPriority = useRef("HIGH")
+  const deviceName = useRef("")
+  const deviceMsg = useRef("")
+  const nextTick = useCallback(() => {
     axios.get('/api/tick').then(resp => {
       console.log(resp.data);
       Notification.info({
@@ -32,13 +57,18 @@ function App() {
         position: 'bottomRight'
       })
       setLogs(logs + '\n' + resp.data)
+      console.log(logs)
       setTick(!tick);
     }).catch(err => {
       console.log(err)
     })
-    setTick(!tick);
-  }
-  const [timer, setTimer] = useState(null);
+  }, [logs, tick])
+  const timerCallback = useCallback(() => {
+    if(timer) {
+      nextTick()
+    }
+  }, [timer, nextTick])
+  useInterval(timerCallback, 1000)
   return (
     <Layout style={{ height: "100%" }}>
       <Modal title="提交任务" visible={showSubmitTask} onCancel={() => {setShowSubmitTask(false)}}
@@ -70,7 +100,29 @@ function App() {
           <Select.Option value="LOW">低优先级</Select.Option>
         </Select>
       </Modal>
-          
+      <Modal title="设备文件输入" visible={showDeviceInput} onCancel={() => { setShowDeviceInput(false) }}
+        onOk={() => {
+          axios.post('/api/http_input', { deviceName: deviceName.current, content: deviceMsg.current }).then(resp => { 
+            Notification.success({
+              title: '提交成功',
+              content: resp.data,
+              duration: 1,
+            })
+            deviceName.current = ""
+            deviceMsg.current = ""
+            setTick(~tick)
+          }).catch(e => {
+            Notification.error({
+              title: '执行失败',
+              content: 'Submit Failed!',
+              duration: 1,
+            })
+          })
+        }}
+      >
+        <Input onChange={(v) => deviceName.current = v} style={{marginBottom: '10px'}} placeholder={"device name"} />
+        <Input onChange={(v) => deviceMsg.current = v} placeholder={"message"} />
+      </Modal>
       
       <Header className="header">
         <div className="capital">
@@ -88,10 +140,13 @@ function App() {
             setTimer(null)
           } else {
             nextTick()
-            setTimer(setInterval(nextTick, 1000))
+            setTimer(true)
           }
         }}>
           { timer ? 'Stop'  : 'Continously Run' }
+        </Button>
+        <Button className="submit-task-button" type="primary" theme="solid" onClick={() => setShowDeviceInput(true)}>
+          Device Input
         </Button>
       </Header>
       <Layout className="maincontent">

@@ -2,6 +2,7 @@
   "name": "sos-front",
   "version": "0.1.0",
   "private": true,
+  "homepage": "./",
   "dependencies": {
     "@douyinfe/semi-icons": "^2.55.5",
     "@douyinfe/semi-ui": "^2.55.5",
