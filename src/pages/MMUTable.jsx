@@ -21,7 +21,8 @@ function MMUTable(props) {
             phyAddr: pageList[virAddr].PhyPage,
             dirty: pageList[virAddr].Dirty,
             pcbid: keyProcess,
-            processName: nameProcess
+            processName: nameProcess,
+            pageLastVisit: mmuInfo.pageLastVisit[pageList[virAddr].PhyPage]
           })
         }
       }
@@ -42,6 +43,10 @@ function MMUTable(props) {
     {
       title: '进程名',
       dataIndex: 'processName',
+    },
+    {
+      title: '最后一次访问',
+      dataIndex: 'pageLastVisit'
     },
     {
       title: '是否脏页',

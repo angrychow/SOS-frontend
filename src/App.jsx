@@ -68,7 +68,7 @@ function App() {
       nextTick()
     }
   }, [timer, nextTick])
-  useInterval(timerCallback, 1000)
+  useInterval(timerCallback, 100)
   return (
     <Layout style={{ height: "100%" }}>
       <Modal title="提交任务" visible={showSubmitTask} onCancel={() => {setShowSubmitTask(false)}}
